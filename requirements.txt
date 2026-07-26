@@ -1,0 +1,12 @@
+# I keep the dependency list deliberately small so the project installs and runs
+# cleanly from scratch. Django is the core; pandas + openpyxl power the CSV/Excel
+# import bonus. Swagger UI is loaded from a CDN in the browser, so it needs no
+# Python package here.
+Django==5.0.6
+pandas==2.2.2
+openpyxl==3.1.5
+
+# Optional: only needed if you run against PostgreSQL instead of the default SQLite.
+# I left it commented so a clean `pip install -r requirements.txt` never fails on
+# systems without Postgres client headers. Uncomment to use Postgres.
+# psycopg2-binary==2.9.9
