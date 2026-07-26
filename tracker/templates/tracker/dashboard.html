@@ -1,0 +1,205 @@
+{% extends "tracker/base.html" %}
+{% load static %}
+
+{% block nav_dashboard %}active{% endblock %}
+
+{% block head_extra %}
+  <!-- Leaflet for the GIS bonus map. Loaded from CDN; used only to render markers. -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+{% endblock %}
+
+{% block content %}
+<main class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Volta Region · Cocoa Operations</div>
+    <h1>Farm Plot &amp; Harvest Tracker</h1>
+    <p>Register contracted farmers and their cocoa plots, log harvest records from the field, and read performance at a glance.</p>
+  </div>
+
+  <!-- Live headline figures, hydrated from /api/overview/ -->
+  <section class="stats" id="statCards">
+    <div class="stat"><div class="label">Farmers</div><div class="value" id="statFarmers">—</div></div>
+    <div class="stat"><div class="label">Plots</div><div class="value" id="statPlots">—</div></div>
+    <div class="stat"><div class="label">Harvest records</div><div class="value" id="statHarvests">—</div></div>
+    <div class="stat"><div class="label">Total harvested</div><div class="value" id="statWeight">—<span class="unit">kg</span></div></div>
+  </section>
+
+  <!-- Tabs -->
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="plots" role="tab">Plots &amp; Map</button>
+    <button class="tab" data-tab="farmers" role="tab">Farmers</button>
+    <button class="tab" data-tab="import" role="tab">Import Harvests</button>
+  </div>
+
+  <!-- PLOTS PANEL -->
+  <section class="panel active" id="panel-plots">
+    <div class="card">
+      <div class="card-head">
+        <h2>Registered plots</h2>
+        <button class="btn btn-gold" id="addPlotBtn">+ Register plot</button>
+      </div>
+      <div class="card-body">
+        <div class="table-wrap">
+          <table class="data" id="plotsTable">
+            <thead>
+              <tr>
+                <th>Plot code</th><th>Farmer</th><th>Size (ha)</th>
+                <th>Variety</th><th>Harvests</th><th></th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="6"><div class="loading">Loading plots…</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Plot map</h2>
+        <span class="hint">Plots with coordinates appear as markers</span>
+      </div>
+      <div class="card-body"><div id="map"></div></div>
+    </div>
+  </section>
+
+  <!-- FARMERS PANEL -->
+  <section class="panel" id="panel-farmers">
+    <div class="card">
+      <div class="card-head">
+        <h2>Contracted farmers</h2>
+        <button class="btn btn-gold" id="addFarmerBtn">+ Register farmer</button>
+      </div>
+      <div class="card-body">
+        <div class="table-wrap">
+          <table class="data" id="farmersTable">
+            <thead>
+              <tr><th>Name</th><th>Phone</th><th>Community</th><th>Registered</th><th>Plots</th><th></th></tr>
+            </thead>
+            <tbody><tr><td colspan="6"><div class="loading">Loading farmers…</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IMPORT PANEL -->
+  <section class="panel" id="panel-import">
+    <div class="card">
+      <div class="card-head">
+        <h2>Import harvest records</h2>
+        <span class="hint">CSV or Excel · columns: plot code, date, weight, grade</span>
+      </div>
+      <div class="card-body" style="padding:18px;">
+        <div class="dropzone" id="dropzone">
+          <div class="big">Drop a CSV / Excel file here</div>
+          <div class="muted">or choose a file to bulk-log harvests. Valid rows are created; bad rows are reported line by line.</div>
+          <div style="margin-top:14px;">
+            <input type="file" id="importFile" accept=".csv,.xlsx,.xls" hidden>
+            <button class="btn btn-ghost" id="chooseFileBtn">Choose file</button>
+            <button class="btn btn-primary" id="uploadBtn" disabled>Upload &amp; import</button>
+          </div>
+          <div class="muted" id="chosenName" style="margin-top:10px;"></div>
+        </div>
+        <div class="import-report" id="importReport"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ MODALS (hand-written HTML forms, submitted via AJAX) ============ -->
+
+<!-- Farmer modal -->
+<div class="modal-backdrop" id="farmerModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head"><h3 id="farmerModalTitle">Register farmer</h3><button class="modal-close" data-close>&times;</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="farmerId">
+      <div class="field"><label for="fName">Full name</label><input id="fName"><div class="err" data-err="name"></div></div>
+      <div class="field"><label for="fPhone">Phone number</label><input id="fPhone" placeholder="+233…"><div class="err" data-err="phone_number"></div></div>
+      <div class="field"><label for="fCommunity">Community / town</label><input id="fCommunity"><div class="err" data-err="community"></div></div>
+      <div class="field"><label for="fDate">Date registered <span class="opt">(optional)</span></label><input id="fDate" type="date"><div class="err" data-err="date_registered"></div></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close>Cancel</button>
+      <button class="btn btn-primary" id="saveFarmerBtn">Save farmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Plot modal -->
+<div class="modal-backdrop" id="plotModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head"><h3 id="plotModalTitle">Register plot</h3><button class="modal-close" data-close>&times;</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="plotId">
+      <div class="field"><label for="pFarmer">Farmer</label><select id="pFarmer"></select><div class="err" data-err="farmer_id"></div></div>
+      <div class="field"><label for="pCode">Plot code</label><input id="pCode" placeholder="VR-KP-001"><div class="err" data-err="plot_code"></div></div>
+      <div class="grid-2">
+        <div class="field"><label for="pSize">Size (hectares)</label><input id="pSize" type="number" step="0.01" min="0"><div class="err" data-err="size_hectares"></div></div>
+        <div class="field"><label for="pVariety">Cocoa variety <span class="opt">(optional)</span></label><input id="pVariety"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label for="pLat">Latitude <span class="opt">(optional)</span></label><input id="pLat" type="number" step="0.00001"></div>
+        <div class="field"><label for="pLng">Longitude <span class="opt">(optional)</span></label><input id="pLng" type="number" step="0.00001"></div>
+      </div>
+      <div class="field err" data-err="location" style="margin-top:-6px;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close>Cancel</button>
+      <button class="btn btn-primary" id="savePlotBtn">Save plot</button>
+    </div>
+  </div>
+</div>
+
+<!-- Harvest modal -->
+<div class="modal-backdrop" id="harvestModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head"><h3 id="harvestModalTitle">Log harvest</h3><button class="modal-close" data-close>&times;</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="harvestPlotId">
+      <p class="hint" id="harvestPlotLabel" style="margin-top:0;color:var(--muted);"></p>
+      <div class="grid-2">
+        <div class="field"><label for="hDate">Harvest date</label><input id="hDate" type="date"><div class="err" data-err="harvest_date"></div></div>
+        <div class="field"><label for="hWeight">Weight (kg)</label><input id="hWeight" type="number" step="0.01" min="0"><div class="err" data-err="weight_kg"></div></div>
+      </div>
+      <div class="field"><label for="hGrade">Quality grade</label>
+        <select id="hGrade"><option value="A">Grade A</option><option value="B">Grade B</option><option value="C">Grade C</option></select>
+        <div class="err" data-err="quality_grade"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close>Cancel</button>
+      <button class="btn btn-primary" id="saveHarvestBtn">Log harvest</button>
+    </div>
+  </div>
+</div>
+
+<!-- Summary + prediction modal -->
+<div class="modal-backdrop" id="summaryModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head"><h3 id="summaryTitle">Plot summary</h3><button class="modal-close" data-close>&times;</button></div>
+    <div class="modal-body">
+      <div class="readout">
+        <div class="cell"><div class="k">Total harvested</div><div class="v" id="sumTotal">—</div></div>
+        <div class="cell"><div class="k">Records</div><div class="v" id="sumCount">—</div></div>
+        <div class="cell"><div class="k">Avg / harvest</div><div class="v" id="sumAvg">—</div></div>
+      </div>
+      <div class="predict-box">
+        <div class="k">Projected next harvest</div>
+        <div class="v" id="predVal">—</div>
+        <div class="method" id="predMethod"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-primary" data-close>Close</button></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block body_extra %}
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+          integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJ0uxM6wtx23xtM6bpU7WZ+HeBAHU=" crossorigin=""></script>
+  <script src="{% static 'tracker/js/app.js' %}"></script>
+{% endblock %}

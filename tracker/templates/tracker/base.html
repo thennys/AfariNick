@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- I set a proper viewport so the layout is genuinely responsive on phones. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Afarinick — Farm Plot & Harvest Tracker{% endblock %}</title>
+
+  <!-- I pair Fraunces (a warm, organic display serif) with Inter (a clean UI face).
+       It's a deliberate, non-default pairing that suits an agri-forest brand. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{% static 'tracker/css/styles.css' %}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">A</div>
+      <div class="titles">
+        <div class="name">Afarinick</div>
+        <div class="sub">Farm Plot &amp; Harvest Tracker</div>
+      </div>
+    </div>
+    <nav class="topnav">
+      <a href="{% url 'dashboard' %}" class="{% block nav_dashboard %}{% endblock %}">Dashboard</a>
+      <a href="{% url 'swagger-ui' %}" class="{% block nav_docs %}{% endblock %}">API Docs</a>
+    </nav>
+  </header>
+
+  {% block content %}{% endblock %}
+
+  <div class="toast-stack" id="toastStack"></div>
+  {% block body_extra %}{% endblock %}
+</body>
+</html>
