@@ -1,0 +1,43 @@
+{% extends "tracker/base.html" %}
+{% load static %}
+{% block title %}API Docs — Afarinick Tracker{% endblock %}
+{% block nav_docs %}active{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css">
+  <style>
+    /* I tuck Swagger UI inside a parchment card so it feels part of the product,
+       not a bolted-on third-party page. */
+    .swagger-shell { max-width: 1180px; margin: 0 auto; padding: 24px clamp(16px,4vw,40px) 64px; }
+    .swagger-card { background:#fff; border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+    #swagger-ui .topbar { display:none; } /* hide Swagger's own bar; we have ours */
+    #swagger-ui .info { margin: 22px; }
+  </style>
+{% endblock %}
+
+{% block content %}
+<main class="swagger-shell">
+  <div class="page-head">
+    <div class="eyebrow">Interactive Reference</div>
+    <h1>API Documentation</h1>
+    <p>Every endpoint below is live. Expand one, press <strong>Try it out</strong>, fill in the body, and execute it against this running instance.</p>
+  </div>
+  <div class="swagger-card"><div id="swagger-ui"></div></div>
+</main>
+{% endblock %}
+
+{% block body_extra %}
+  <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
+  <script>
+    // I point Swagger UI at my hand-written schema endpoint. Because the schema's
+    // server URL is derived from the request, "Try it out" hits this same host.
+    window.ui = SwaggerUIBundle({
+      url: "{% url 'openapi-schema' %}",
+      dom_id: "#swagger-ui",
+      deepLinking: true,
+      docExpansion: "list",
+      defaultModelsExpandDepth: -1,
+      tryItOutEnabled: true
+    });
+  </script>
+{% endblock %}
