@@ -1,0 +1,24 @@
+# Render blueprint. With this file in the repo, Render can spin up the whole service
+# from "New > Blueprint". I chose Render as the primary host because this is a
+# long-running Django app: migrations run in the build step and static files are
+# collected once, which suits Render's persistent web service better than a
+# serverless target.
+services:
+  - type: web
+    name: afarinick-tracker
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application"
+    envVars:
+      # I let Render generate a strong secret key automatically.
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+      # DATABASE_URL: paste your Neon connection string here in the Render dashboard.
+      # I mark it sync:false so it is set as a secret rather than committed to git.
+      - key: DATABASE_URL
+        sync: false
