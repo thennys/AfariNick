@@ -1,12 +1,10 @@
-# I keep the dependency list deliberately small so the project installs and runs
-# cleanly from scratch. Django is the core; pandas + openpyxl power the CSV/Excel
-# import bonus. Swagger UI is loaded from a CDN in the browser, so it needs no
-# Python package here.
+# Core application
 Django==5.0.6
-pandas==2.2.2
-openpyxl==3.1.5
+pandas==2.2.2          # CSV/Excel parsing for the harvest-import bonus
+openpyxl==3.1.5        # Excel (.xlsx) support for pandas
 
-# Optional: only needed if you run against PostgreSQL instead of the default SQLite.
-# I left it commented so a clean `pip install -r requirements.txt` never fails on
-# systems without Postgres client headers. Uncomment to use Postgres.
-# psycopg2-binary==2.9.9
+# Production serving & database
+gunicorn==22.0.0       # WSGI server used by Render (start command)
+whitenoise==6.7.0      # serves static files from the app (Render + Vercel)
+dj-database-url==2.2.0 # parses DATABASE_URL, e.g. a Neon Postgres connection string
+psycopg2-binary==2.9.9 # PostgreSQL driver (Neon / any Postgres). Not used on SQLite.
