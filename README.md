@@ -21,6 +21,8 @@ bonus features are included, plus an interactive **Swagger UI**.
 - [Data model](#data-model)
 - [Bonus features](#bonus-features)
 - [Running the tests](#running-the-tests)
+- [Management commands](#management-commands)
+- [Deployment & CI](#deployment--ci)
 - [Assumptions I made](#assumptions-i-made)
 - [What I'd do differently with more time](#what-id-do-differently-with-more-time)
 
@@ -193,6 +195,34 @@ python manage.py test
 
 I focused the tests where a bug would hurt most: the required summary endpoint's
 maths, the "no negative weights" rule, and the prediction bonus.
+
+---
+
+## Management commands
+
+I included two custom commands:
+
+- `python manage.py seed_demo` — loads realistic demo farmers, plots and harvests
+  (Volta Region coordinates) so the dashboard and map aren't empty on first run.
+- `python manage.py harvest_report [--min-weight 200]` — prints a per-plot harvest
+  summary (total, average, record count) to the console, sorted by total. Handy for
+  a quick check over SSH or a scheduled job.
+
+---
+
+## Deployment & CI
+
+- **Continuous integration:** `.github/workflows/ci.yml` runs on every push and pull
+  request — it installs dependencies, applies migrations, and runs the test suite,
+  so a broken migration or failing test is caught before merge.
+- **Hosting:** the project is ready to deploy to **Render** (recommended, via the
+  committed `render.yaml` + `build.sh`) or **Vercel** (via `vercel.json` +
+  `api/index.py`), backed by a **Neon** serverless PostgreSQL database. Static files
+  are served by WhiteNoise, and the database is chosen from `DATABASE_URL`, so no
+  code changes are needed to switch from local SQLite to Neon.
+- Full step-by-step instructions — including Neon setup and an optional **Vercel
+  Blob** section for persistent file storage — are in
+  **[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
 ---
 
