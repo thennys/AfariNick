@@ -1,0 +1,33 @@
+# A simple continuous-integration workflow.
+# I keep it deliberately minimal: on every push and pull request it installs the
+# dependencies, applies migrations against a throwaway SQLite database, and runs the
+# test suite. This is enough to catch a broken migration or a failing test before it
+# reaches the main branch.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Apply migrations
+        run: python manage.py migrate --no-input
+
+      - name: Run tests
+        run: python manage.py test
