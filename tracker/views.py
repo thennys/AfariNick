@@ -16,9 +16,10 @@ views, which keeps each resource's logic in one readable place.
 """
 import json
 
+import pandas as pd
 from django.db.models import Avg, Sum
-from django.http import Http404, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.http import JsonResponse
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
@@ -458,8 +459,6 @@ def harvest_import(request):
     the whole file: I bulk-create the valid rows and return a precise, row-numbered
     report of what failed and why, so a field officer can fix just those lines.
     """
-    import pandas as pd
-
     upload = request.FILES.get("file")
     if not upload:
         return error_response({"file": "Please attach a CSV or Excel file under the 'file' field."})
