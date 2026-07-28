@@ -10,6 +10,11 @@ API (no Django REST Framework, no Django Forms, no class-based views — matchin
 conventions in the brief). The frontend is **raw HTML + jQuery/AJAX**. All three
 bonus features are included, plus an interactive **Swagger UI**.
 
+**Live demo:** <https://afarinick-tracker.onrender.com/> — API docs at
+<https://afarinick-tracker.onrender.com/api/docs/>. (Hosted on Render's free tier,
+so the first request after a period of inactivity may take ~50 seconds to wake the
+service.)
+
 
 
 ## Contents
@@ -39,7 +44,7 @@ bonus features are included, plus an interactive **Swagger UI**.
 | API style | Plain Django `JsonResponse` | Keeps things dependency-light and faithful to "we use function-based views." I did **not** add DRF. |
 | Database | **SQLite by default**, PostgreSQL via env var | See the note below. |
 | API docs | Hand-written OpenAPI 3 + Swagger UI (CDN) | Interactive docs without pulling in DRF/spectacular. |
-| GIS | Plain `latitude`/`longitude` fields + Leaflet | Runs anywhere with no GDAL/PostGIS system dependencies. |
+| GIS | Plain `latitude`/`longitude` fields + self-hosted Leaflet | Runs anywhere with no GDAL/PostGIS deps; the map has no CDN dependency. |
 
 ### Database choice — please read
 
@@ -186,16 +191,23 @@ explicit checks in the views at the API boundary.
 I completed **all three** optional bonuses.
 
 - **GIS** — `Plot` carries optional `latitude`/`longitude`, and the dashboard renders
-  every located plot as a marker on a **Leaflet** map centred on the Volta Region.
-  I chose lat/lng floats over a PostGIS `PointField` deliberately: it delivers the
-  map feature the brief asks for while keeping the project runnable on SQLite with
-  no GDAL/PostGIS system libraries to install.
+  every located plot as a circle marker on a **Leaflet** map centred on the Volta
+  Region. When registering a plot, the coordinates can be typed in or captured
+  automatically with a **"Use my current location"** button that reads the device's
+  GPS via the browser geolocation API — handy for a field officer standing on the
+  plot. I self-host Leaflet from the app's own static files rather than a CDN, so the
+  map always loads (no external dependency a browser or network filter could block).
+  I chose lat/lng floats over a PostGIS `PointField` deliberately: it delivers the map
+  feature the brief asks for while keeping the project runnable on SQLite with no
+  GDAL/PostGIS system libraries to install.
 - **Data import** — `POST /api/harvests/import/` accepts a **CSV or Excel** file
   (columns: plot code, date, weight, grade), read with **pandas** (+ openpyxl for
   Excel). It validates every row independently, bulk-creates the valid ones, and
-  returns a row-numbered report of which rows failed and why. A ready-made
-  `sample_harvests.csv` (with some deliberately bad rows) is included so you can see
-  the failure reporting immediately — upload it from the **Import Harvests** tab.
+  returns a row-numbered report of which rows failed and why. Ready-made sample files
+  are included so you can try it immediately from the **Import Harvests** tab:
+  `harvests_valid.csv` (all rows import cleanly) and `harvests_invalid.csv` (every row
+  fails for a different reason, to show the error reporting). `sample_harvests.csv`
+  mixes both.
 - **AI/ML** — `GET /api/plots/<plot_id>/predict/` returns a simple next-harvest
   weight estimate. With 2+ records I fit a least-squares **linear trend** over the
   chronological history and project the next point (clamped at zero); with one
@@ -220,8 +232,11 @@ maths, the "no negative weights" rule, and the prediction bonus.
 
 I included two custom commands:
 
-- `python manage.py seed_demo` — loads realistic demo farmers, plots and harvests
-  (Volta Region coordinates) so the dashboard and map aren't empty on first run.
+- `python manage.py seed_demo` — loads a fixed set of demo farmers plus 7 plots, all
+  with real Volta Region coordinates (so the map is populated), and a rising harvest
+  history per plot (so summaries and predictions are meaningful). It's deterministic
+  and destructive: it clears existing rows first, so every run gives the same clean
+  demo state.
 - `python manage.py harvest_report [--min-weight 200]` — prints a per-plot harvest
   summary (total, average, record count) to the console, sorted by total. Handy for
   a quick check over SSH or a scheduled job.
@@ -256,6 +271,7 @@ I included two custom commands:
 - **Coordinates are optional but paired** — if you supply one of latitude/longitude
   you must supply both, so a map marker is never half-defined.
 - **Dates** are accepted as `YYYY-MM-DD` (plus a few common variants on import).
+
 
 
 ## What I'd do differently with more time
