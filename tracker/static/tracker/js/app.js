@@ -350,6 +350,12 @@
 
   // ---- map (GIS bonus) ----------------------------------------------------
   function renderMap() {
+    // I guard against the Leaflet library not loading (e.g. a blocked CDN) so the
+    // user sees a clear message instead of a blank box.
+    if (typeof L === "undefined") {
+      $("#map").html('<div class="loading">Map library could not be loaded — check the network/ad-blocker.</div>');
+      return;
+    }
     var located = plotsCache.filter(function (p) { return p.latitude != null && p.longitude != null; });
     if (!map) {
       // I centre the map on the Volta Region (Kpando area) where Afarinick's
@@ -363,7 +369,18 @@
     markerLayer.clearLayers();
     var bounds = [];
     located.forEach(function (p) {
-      var m = L.marker([p.latitude, p.longitude]).bindPopup(
+      // I draw each plot as a circle marker rather than the default pin. Circle
+      // markers are rendered by Leaflet itself (no external icon image), so they
+      // always show — this avoids the common "invisible markers" problem where the
+      // default pin PNGs fail to load from the CDN. I style them in the brand
+      // colours: cocoa-green outline, harvest-gold fill.
+      var m = L.circleMarker([p.latitude, p.longitude], {
+        radius: 9,
+        color: "#14372b",
+        weight: 2,
+        fillColor: "#b8862b",
+        fillOpacity: 0.9
+      }).bindPopup(
         "<b>" + p.plot_code + "</b><br>" + p.farmer_name + "<br>" + p.size_hectares + " ha" +
         (p.cocoa_variety ? "<br>" + p.cocoa_variety : "")
       );
@@ -371,9 +388,10 @@
       bounds.push([p.latitude, p.longitude]);
     });
     if (bounds.length) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
-    // I invalidate size after the panel becomes visible so Leaflet renders tiles
-    // correctly even though the map started inside a hidden-ish container.
+    // I invalidate size a couple of times after render so Leaflet lays the tiles
+    // out correctly even if the container's size settled slightly late.
     setTimeout(function () { map.invalidateSize(); }, 100);
+    setTimeout(function () { map.invalidateSize(); }, 500);
   }
 
   // ---- geolocation (auto-fill a plot's coordinates from the device GPS) ------
