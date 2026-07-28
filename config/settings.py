@@ -83,6 +83,10 @@ if os.environ.get("DATABASE_URL"):
         "default": dj_database_url.parse(
             os.environ["DATABASE_URL"],
             conn_max_age=600,
+            # I enable health checks so Django discards a dead pooled connection and
+            # opens a fresh one instead of erroring — this avoids the occasional 500
+            # that a serverless Postgres (Neon) can cause when it closes idle links.
+            conn_health_checks=True,
             # Neon requires TLS; I enforce it unless the URL already specifies a mode.
             ssl_require="sslmode" not in os.environ["DATABASE_URL"],
         )

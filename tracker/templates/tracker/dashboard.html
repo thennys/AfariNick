@@ -4,9 +4,10 @@
 {% block nav_dashboard %}active{% endblock %}
 
 {% block head_extra %}
-  <!-- Leaflet for the GIS bonus map. Loaded from CDN; used only to render markers. -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <!-- Leaflet for the GIS bonus map. I self-host it from the app's own static files
+       (rather than a CDN) so it always loads — no dependency on an external CDN that a
+       browser ad-blocker or network filter might strip. -->
+  <link rel="stylesheet" href="{% static 'tracker/vendor/leaflet/leaflet.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -204,7 +205,6 @@
 {% block body_extra %}
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"
           integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha256-20nQCchB9co0qIjJ0uxM6wtx23xtM6bpU7WZ+HeBAHU=" crossorigin=""></script>
+  <script src="{% static 'tracker/vendor/leaflet/leaflet.js' %}"></script>
   <script src="{% static 'tracker/js/app.js' %}"></script>
 {% endblock %}
