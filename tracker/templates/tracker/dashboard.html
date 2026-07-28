@@ -139,6 +139,11 @@
         <div class="field"><label for="pSize">Size (hectares)</label><input id="pSize" type="number" step="0.01" min="0"><div class="err" data-err="size_hectares"></div></div>
         <div class="field"><label for="pVariety">Cocoa variety <span class="opt">(optional)</span></label><input id="pVariety"></div>
       </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>Location <span class="opt">(optional)</span></label>
+        <button type="button" class="btn btn-ghost btn-sm" id="useLocationBtn">Use my current location</button>
+        <span class="hint" id="locStatus" style="margin-left:10px;color:var(--muted);font-size:12.5px;"></span>
+      </div>
       <div class="grid-2">
         <div class="field"><label for="pLat">Latitude <span class="opt">(optional)</span></label><input id="pLat" type="number" step="0.00001"></div>
         <div class="field"><label for="pLng">Longitude <span class="opt">(optional)</span></label><input id="pLng" type="number" step="0.00001"></div>

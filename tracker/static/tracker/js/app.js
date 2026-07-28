@@ -193,11 +193,13 @@
     if (!farmersCache.length) { toast("Please register a farmer first.", true); return; }
     $("#plotId").val("");
     $("#pCode,#pSize,#pVariety,#pLat,#pLng").val("");
+    $("#locStatus").text("");
     $("#plotModalTitle").text("Register plot");
     openModal("plotModal");
   }
   function editPlot(p) {
     clearErrors($("#plotModal"));
+    $("#locStatus").text("");
     $("#plotId").val(p.id);
     $("#pFarmer").val(p.farmer_id);
     $("#pCode").val(p.plot_code); $("#pSize").val(p.size_hectares);
@@ -374,6 +376,34 @@
     setTimeout(function () { map.invalidateSize(); }, 100);
   }
 
+  // ---- geolocation (auto-fill a plot's coordinates from the device GPS) ------
+  function captureLocation() {
+    var $status = $("#locStatus");
+    if (!navigator.geolocation) {
+      $status.text("Geolocation isn't supported on this device.");
+      return;
+    }
+    var $btn = $("#useLocationBtn").prop("disabled", true);
+    $status.text("Locating…");
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        // I round to 5 decimal places (~1 metre), which is plenty for a plot marker.
+        $("#pLat").val(pos.coords.latitude.toFixed(5));
+        $("#pLng").val(pos.coords.longitude.toFixed(5));
+        var acc = Math.round(pos.coords.accuracy);
+        $status.text("Captured (±" + acc + " m accuracy)");
+        $btn.prop("disabled", false);
+      },
+      function (err) {
+        // I surface the reason (denied, unavailable, timeout) so the user knows
+        // whether to retry or just type the coordinates by hand.
+        $status.text("Couldn't get location: " + err.message);
+        $btn.prop("disabled", false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
   // ---- wiring -------------------------------------------------------------
   function bindTabs() {
     $(".tab").on("click", function () {
@@ -393,6 +423,7 @@
     $("#saveFarmerBtn").on("click", saveFarmer);
     $("#addPlotBtn").on("click", openPlotModal);
     $("#savePlotBtn").on("click", savePlot);
+    $("#useLocationBtn").on("click", captureLocation);
     $("#saveHarvestBtn").on("click", saveHarvest);
   }
 

@@ -10,13 +10,14 @@ API (no Django REST Framework, no Django Forms, no class-based views — matchin
 conventions in the brief). The frontend is **raw HTML + jQuery/AJAX**. All three
 bonus features are included, plus an interactive **Swagger UI**.
 
----
+
 
 ## Contents
 
 - [Tech stack & key decisions](#tech-stack--key-decisions)
 - [Quick start](#quick-start)
 - [Testing the API with Swagger UI](#testing-the-api-with-swagger-ui)
+- [How the API docs are generated](#how-the-api-docs-are-generated)
 - [API reference](#api-reference)
 - [Data model](#data-model)
 - [Bonus features](#bonus-features)
@@ -26,12 +27,12 @@ bonus features are included, plus an interactive **Swagger UI**.
 - [Assumptions I made](#assumptions-i-made)
 - [What I'd do differently with more time](#what-id-do-differently-with-more-time)
 
----
+
 
 ## Tech stack & key decisions
 
 | Area | Choice | Why I chose it |
-|------|--------|----------------|
+||--|-|
 | Framework | Django 5 | Matches the brief and the team's stack. |
 | Views | **Function-based only** | The brief states the team uses function-based views throughout, so there is not a single class-based view in this project. |
 | Forms | **Hand-written HTML + AJAX** | The brief asks not to use the Django Forms framework; I gather and validate input myself. |
@@ -53,7 +54,7 @@ Postgres-ready: set `POSTGRES_DB` (and friends) in the environment, uncomment
 with no other changes (see `config/settings.py`). Nothing in the models or queries
 is SQLite-specific.
 
----
+
 
 ## Quick start
 
@@ -83,7 +84,7 @@ Then open:
 - **API docs (Swagger UI)** → http://127.0.0.1:8000/api/docs/
 - **Django admin** → http://127.0.0.1:8000/admin/ (run `python manage.py createsuperuser` first if you want to log in)
 
----
+
 
 ## Testing the API with Swagger UI
 
@@ -120,14 +121,31 @@ from the browser without curl or Postman.
 The raw OpenAPI schema is available at **`/api/schema/`** if you'd rather import it
 into Postman or Insomnia.
 
----
+
+
+## How the API docs are generated
+
+I serve the standard Swagger UI (from a CDN) against an OpenAPI 3 schema I wrote by
+hand as a small Python dict in `tracker/api_schema.py`, exposed as JSON at
+`/api/schema/`. The page at `/api/docs/` loads that schema, and because the schema's
+server URL is taken from the incoming request, the "Try it out" console calls this
+same running instance.
+
+I chose a hand-written schema over an auto-generator such as drf-spectacular or
+drf-yasg because those introspect Django REST Framework views and serializers. This
+project intentionally uses plain Django function-based views (per the brief's
+"function-based views throughout" and "no Django Forms" conventions), so pulling in
+DRF purely for documentation would have worked against those constraints. The
+hand-written schema keeps the app plain-Django at the cost of a small static spec.
+
+
 
 ## API reference
 
 All endpoints are JSON. Base path: `/api`.
 
 | Method | Path | Purpose |
-|--------|------|---------|
+|--|||
 | GET | `/api/overview/` | Dashboard counts (farmers, plots, records, total kg) |
 | GET / POST | `/api/farmers/` | List all farmers / register a farmer |
 | GET / PUT / DELETE | `/api/farmers/<id>/` | Retrieve / update / delete a farmer |
@@ -141,7 +159,7 @@ All endpoints are JSON. Base path: `/api`.
 
 Validation errors come back as `{"errors": {"field": "message"}}` with HTTP 400.
 
----
+
 
 ## Data model
 
@@ -161,7 +179,7 @@ Integrity is enforced at three layers so bad data is hard to create: model field
 validators, a database **CHECK constraint** that weight must be positive, and
 explicit checks in the views at the API boundary.
 
----
+
 
 ## Bonus features
 
@@ -185,7 +203,7 @@ I completed **all three** optional bonuses.
   the method + sample size rather than reaching for a trained model, which the brief
   explicitly said wasn't expected.
 
----
+
 
 ## Running the tests
 
@@ -196,7 +214,7 @@ python manage.py test
 I focused the tests where a bug would hurt most: the required summary endpoint's
 maths, the "no negative weights" rule, and the prediction bonus.
 
----
+
 
 ## Management commands
 
@@ -208,7 +226,7 @@ I included two custom commands:
   summary (total, average, record count) to the console, sorted by total. Handy for
   a quick check over SSH or a scheduled job.
 
----
+
 
 ## Deployment & CI
 
@@ -224,7 +242,7 @@ I included two custom commands:
   Blob** section for persistent file storage — are in
   **[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
----
+
 
 ## Assumptions I made
 
@@ -239,7 +257,6 @@ I included two custom commands:
   you must supply both, so a map marker is never half-defined.
 - **Dates** are accepted as `YYYY-MM-DD` (plus a few common variants on import).
 
----
 
 ## What I'd do differently with more time
 
